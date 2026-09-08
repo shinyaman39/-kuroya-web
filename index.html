@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#10151e" />
+<title>KUROYA: Dusk Hunt — Mobile</title>
+<style>
+:root{--ink:#f0e8d7;--glass:rgba(8,12,18,.78);--line:rgba(255,255,255,.18);--gold:#e6bd6c;--red:#a53b31}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:none}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b1018;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+canvas{display:block;width:100vw;height:100vh;background:#111823}
+#hud{position:fixed;inset:0;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.panel{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);border-radius:14px;box-shadow:0 8px 28px #0008}
+#top{position:absolute;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top));display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+#objective,#status{padding:9px 12px;font-size:12px;line-height:1.35}.big{font-weight:800;letter-spacing:.05em;font-size:13px}
+#objective{max-width:58vw}#status{text-align:right;min-width:130px}.meter{height:6px;background:#ffffff18;border-radius:999px;overflow:hidden;margin-top:5px}.meter i{display:block;width:100%;height:100%;background:var(--gold)}
+#start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(180deg,rgba(45,39,55,.78),rgba(8,12,18,.9));pointer-events:auto}
+.card{width:min(480px,94vw);padding:22px;text-align:center}.card h1{font-size:27px;margin:0 0 6px;letter-spacing:.07em}.card p{opacity:.82;font-size:14px;line-height:1.55;margin:10px 0 16px}.card .note{font-size:12px;opacity:.68}
+button{font:inherit;color:#fff;background:#17202d;border:1px solid var(--line);border-radius:12px;padding:13px 16px;font-weight:700}button.primary{background:#8e332b;border-color:#bc5045;min-width:180px}
+#toast{position:absolute;left:50%;bottom:38%;transform:translateX(-50%);padding:10px 14px;opacity:0;transition:.18s;white-space:nowrap;font-size:13px}.show{opacity:1!important}
+#touch{position:absolute;inset:0;pointer-events:none;display:none}
+#stickBase{position:absolute;left:22px;bottom:calc(24px + env(safe-area-inset-bottom));width:126px;height:126px;border-radius:50%;background:#ffffff12;border:1px solid #ffffff2b;pointer-events:auto}
+#stickKnob{position:absolute;left:38px;top:38px;width:50px;height:50px;border-radius:50%;background:#ffffff38;border:1px solid #ffffff55}
+.action{position:absolute;border-radius:50%;width:76px;height:76px;display:flex;align-items:center;justify-content:center;pointer-events:auto;user-select:none;-webkit-user-select:none;font-size:12px;text-align:center;padding:8px;background:#17202ddc;border:1px solid #ffffff35;color:#fff;font-weight:800}
+#interact{right:20px;bottom:calc(32px + env(safe-area-inset-bottom));background:#6f5730dd}#sprint{right:106px;bottom:calc(98px + env(safe-area-inset-bottom));background:#394354dd}
+#end{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#06090dd8;pointer-events:auto;padding:24px}#end h2{font-size:34px;margin:0 0 8px}.hidden{display:none!important}
+@media (pointer:fine){#touch{display:none!important}}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+  <div id="top" class="hidden">
+    <div id="objective" class="panel"><div class="big">ESCAPER</div><div id="goal">霊灯 0 / 3</div></div>
+    <div id="status" class="panel"><div id="health">NORMAL</div><div>STAMINA<div class="meter"><i id="stamina"></i></div></div></div>
+  </div>
+  <div id="toast" class="panel"></div>
+  <div id="touch">
+    <div id="stickBase"><div id="stickKnob"></div></div>
+    <div id="sprint" class="action">DASH</div>
+    <div id="interact" class="action">霊灯<br>E</div>
+  </div>
+  <div id="start">
+    <div class="card panel">
+      <h1>KUROYA: DUSK HUNT</h1>
+      <p>夕暮れの神社で追跡者から逃げながら、<b>霊灯を3つ</b>起動して第一鳥居から脱出してください。</p>
+      <button id="play" class="primary">▶ すぐ遊ぶ</button>
+      <p class="note">iPhone / iPad: 左スティックで移動、DASHで走る、霊灯の近くで「霊灯」を長押し。<br>PC: WASD / Shift / E。</p>
+    </div>
+  </div>
+  <div id="end"><div class="card panel"><h2 id="endTitle">ESCAPED</h2><p id="endText"></p><button id="again" class="primary">もう一度</button></div></div>
+</div>
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s), C=$('#game'), ctx=C.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){DPR=Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=innerHeight;C.width=Math.floor(W*DPR);C.height=Math.floor(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',resize,{passive:true}); resize();
+const ui={start:$('#start'),play:$('#play'),top:$('#top'),goal:$('#goal'),health:$('#health'),stamina:$('#stamina'),toast:$('#toast'),touch:$('#touch'),stickBase:$('#stickBase'),stickKnob:$('#stickKnob'),sprint:$('#sprint'),interact:$('#interact'),end:$('#end'),endTitle:$('#endTitle'),endText:$('#endText'),again:$('#again')};
+const buildings=[
+{x:1010,y:620,w:310,h:170,n:'HAIDEN'},{x:1040,y:370,w:250,h:150,n:'HONDEN'},
+{x:520,y:650,w:170,h:130,n:'HACHIMAN'},{x:1540,y:570,w:160,h:130,n:'INARI'},
+{x:730,y:1050,w:145,h:100,n:'TEMIZU'},{x:980,y:1350,w:250,h:36,n:'FIRST TORII'}];
+const walls=[...buildings.map(b=>({...b})),{x:250,y:250,w:40,h:1150},{x:1870,y:250,w:40,h:1150},{x:250,y:250,w:1660,h:40},{x:250,y:1400,w:660,h:40},{x:1290,y:1400,w:620,h:40}];
+const lanterns=[{x:620,y:850},{x:1480,y:830},{x:830,y:480},{x:1390,y:460},{x:1100,y:1120}].map((p,i)=>({...p,id:i,on:false,progress:0}));
+const trees=[];let seed=1337;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
+for(let i=0;i<120;i++){let x=310+rnd()*1540,y=310+rnd()*1040;if(buildings.some(b=>x>b.x-80&&x<b.x+b.w+80&&y>b.y-80&&y<b.y+b.h+80))continue;trees.push({x,y,r:14+rnd()*18})}
+let running=false,ended=false,lit=0;
+const me={x:1100,y:1250,r:15,speed:182,stamina:100,hp:2,a:-Math.PI/2};
+const hunter={x:1100,y:410,r:19,speed:142,attackCd:0};
+const keys={}; let joy={x:0,y:0,active:false}, touchSprint=false, touchInteract=false;
+addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault()});
+addEventListener('keyup',e=>{keys[e.code]=false});
+function toast(t){ui.toast.textContent=t;ui.toast.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>ui.toast.classList.remove('show'),1400)}
+function reset(){running=true;ended=false;lit=0;me.x=1100;me.y=1250;me.hp=2;me.stamina=100;hunter.x=1100;hunter.y=410;hunter.attackCd=0;lanterns.forEach(l=>{l.on=false;l.progress=0});ui.start.style.display='none';ui.end.style.display='none';ui.top.classList.remove('hidden');if(matchMedia('(pointer:coarse)').matches)ui.touch.style.display='block';toast('霊灯を3つ起動せよ')}
+ui.play.addEventListener('click',reset);ui.again.addEventListener('click',reset);
+function end(win,msg){if(ended)return;ended=true;running=false;ui.touch.style.display='none';ui.end.style.display='flex';ui.endTitle.textContent=win?'ESCAPED':'CAUGHT';ui.endText.textContent=msg}
+function collides(x,y,r=15){for(const b of walls){if(x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h)return true}return x<275||y<275||x>1885||y>1425}
+function move(dt){let dx=joy.active?joy.x:((keys.KeyD?1:0)-(keys.KeyA?1:0)),dy=joy.active?joy.y:((keys.KeyS?1:0)-(keys.KeyW?1:0));let mag=Math.hypot(dx,dy);if(mag>.03){if(mag>1){dx/=mag;dy/=mag}let sprint=(keys.ShiftLeft||keys.ShiftRight||touchSprint)&&me.stamina>1;let sp=me.speed*(sprint?1.55:1);if(sprint)me.stamina=Math.max(0,me.stamina-34*dt);else me.stamina=Math.min(100,me.stamina+18*dt);let nx=me.x+dx*sp*dt,ny=me.y+dy*sp*dt;if(!collides(nx,me.y,me.r))me.x=nx;if(!collides(me.x,ny,me.r))me.y=ny;me.a=Math.atan2(dy,dx)}else me.stamina=Math.min(100,me.stamina+22*dt)}
+function interact(dt){let near=null,nd=Infinity;for(const l of lanterns){if(l.on)continue;let d=Math.hypot(me.x-l.x,me.y-l.y);if(d<62&&d<nd){near=l;nd=d}}let pressed=keys.KeyE||touchInteract;if(near&&pressed){near.progress+=dt;ui.goal.textContent=`霊灯 ${lit} / 3 · 起動中 ${Math.min(100,Math.floor(near.progress/1.7*100))}%`;if(near.progress>=1.7){near.on=true;lit++;near.progress=1.7;toast('霊灯を起動');ui.goal.textContent=`霊灯 ${lit} / 3${lit>=3?' · 第一鳥居へ':''}`}}else ui.goal.textContent=`霊灯 ${lit} / 3${lit>=3?' · 第一鳥居へ':''}`;if(lit>=3&&me.y>1350&&me.x>920&&me.x<1280)end(true,'第一鳥居から脱出した')}
+function ai(dt){hunter.attackCd=Math.max(0,hunter.attackCd-dt);let dx=me.x-hunter.x,dy=me.y-hunter.y,d=Math.hypot(dx,dy);if(d>1){let nx=hunter.x+dx/d*hunter.speed*dt,ny=hunter.y+dy/d*hunter.speed*dt;if(!collides(nx,hunter.y,hunter.r))hunter.x=nx;if(!collides(hunter.x,ny,hunter.r))hunter.y=ny}if(d<36&&hunter.attackCd<=0){hunter.attackCd=1.25;me.hp--;toast(me.hp>0?'負傷した — 次の一撃で捕縛':'捕縛された');if(me.hp<=0)end(false,'追跡者に捕縛された')}}
+function bindHold(el,setter){const on=e=>{e.preventDefault();setter(true)};const off=e=>{e.preventDefault();setter(false)};el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);el.addEventListener('pointerleave',off)}
+bindHold(ui.sprint,v=>touchSprint=v);bindHold(ui.interact,v=>touchInteract=v);
+let stickId=null;
+function stickMove(e){const r=ui.stickBase.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;const max=r.width*.34, m=Math.hypot(dx,dy)||1;if(m>max){dx=dx/m*max;dy=dy/m*max}joy.x=dx/max;joy.y=dy/max;joy.active=true;ui.stickKnob.style.transform=`translate(${dx}px,${dy}px)`}
+ui.stickBase.addEventListener('pointerdown',e=>{stickId=e.pointerId;ui.stickBase.setPointerCapture(e.pointerId);stickMove(e)});ui.stickBase.addEventListener('pointermove',e=>{if(e.pointerId===stickId)stickMove(e)});function stickEnd(e){if(stickId!==null&&e.pointerId!==undefined&&e.pointerId!==stickId)return;stickId=null;joy={x:0,y:0,active:false};ui.stickKnob.style.transform='translate(0,0)'}ui.stickBase.addEventListener('pointerup',stickEnd);ui.stickBase.addEventListener('pointercancel',stickEnd);
+let last=performance.now();function tick(t){const dt=Math.min(.033,(t-last)/1000);last=t;if(running){move(dt);interact(dt);ai(dt);ui.health.textContent=me.hp===2?'NORMAL':'INJURED';ui.stamina.style.width=me.stamina+'%'}draw();requestAnimationFrame(tick)}requestAnimationFrame(tick);
+function drawActor(p,col,hunt=false){ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle='#0006';ctx.beginPath();ctx.ellipse(10,12,22,11,.2,0,Math.PI*2);ctx.fill();ctx.fillStyle=col;ctx.beginPath();ctx.arc(0,0,hunt?20:16,0,Math.PI*2);ctx.fill();ctx.strokeStyle=hunt?'#e45a50':'#fff9';ctx.lineWidth=3;ctx.stroke();ctx.rotate(p.a||0);ctx.fillStyle=hunt?'#e45a50':'#fff';ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(8,-6);ctx.lineTo(8,6);ctx.fill();ctx.restore()}
+function draw(){let camx=running?me.x:1100,camy=running?me.y:900;let scale=Math.max(.45,Math.min(.78,Math.min(W/1100,H/800)));let g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#644352');g.addColorStop(.46,'#2d3546');g.addColorStop(1,'#121821');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.save();ctx.translate(W/2-camx*scale,H/2-camy*scale);ctx.scale(scale,scale);ctx.fillStyle='#282e2d';ctx.fillRect(250,250,1660,1190);ctx.fillStyle='#4a4741';ctx.fillRect(1040,300,120,1110);ctx.fillRect(530,815,1110,70);ctx.globalAlpha=.17;ctx.fillStyle='#000';for(const tr of trees){ctx.beginPath();ctx.ellipse(tr.x+38,tr.y+18,tr.r*2.1,tr.r*.65,.2,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;for(const tr of trees){ctx.fillStyle='#17231e';ctx.beginPath();ctx.arc(tr.x,tr.y,tr.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#263329';ctx.beginPath();ctx.arc(tr.x-5,tr.y-5,tr.r*.62,0,Math.PI*2);ctx.fill()}for(const b of buildings){ctx.fillStyle=b.n==='FIRST TORII'?'#743229':'#352d2b';ctx.fillRect(b.x,b.y,b.w,b.h);ctx.strokeStyle='#796e5e';ctx.lineWidth=4;ctx.strokeRect(b.x+4,b.y+4,b.w-8,b.h-8);if(b.n!=='FIRST TORII'){ctx.fillStyle='#171a1d';ctx.fillRect(b.x+20,b.y+b.h*.38,b.w-40,b.h*.38)}ctx.fillStyle='#d4c3a0';ctx.font='bold 20px sans-serif';ctx.textAlign='center';ctx.fillText(b.n,b.x+b.w/2,b.y-10)}for(const l of lanterns){if(l.on){const rg=ctx.createRadialGradient(l.x,l.y,2,l.x,l.y,72);rg.addColorStop(0,'rgba(255,205,103,.7)');rg.addColorStop(1,'rgba(255,170,50,0)');ctx.fillStyle=rg;ctx.beginPath();ctx.arc(l.x,l.y,72,0,Math.PI*2);ctx.fill()}ctx.fillStyle=l.on?'#ffd27c':'#6f5b48';ctx.beginPath();ctx.arc(l.x,l.y,l.on?25:11,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2a2018';ctx.lineWidth=5;ctx.stroke()}if(lit>=3){ctx.strokeStyle='#f0bc63';ctx.lineWidth=8;ctx.strokeRect(960,1340,290,58)}drawActor(hunter,'#8d2d28',true);drawActor(me,'#f0e3c4',false);ctx.restore();const haze=ctx.createLinearGradient(0,0,W,H);haze.addColorStop(0,'rgba(225,115,78,.06)');haze.addColorStop(1,'rgba(50,70,110,.14)');ctx.fillStyle=haze;ctx.fillRect(0,0,W,H)}
+})();
+</script>
+</body>
+</html>
