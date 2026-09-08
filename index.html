@@ -4,93 +4,108 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="theme-color" content="#10151e" />
-<title>KUROYA: Dusk Hunt — Mobile</title>
+<meta name="theme-color" content="#121826" />
+<title>KUROYA: DUSK HUNT — 3D</title>
 <style>
-:root{--ink:#f0e8d7;--glass:rgba(8,12,18,.78);--line:rgba(255,255,255,.18);--gold:#e6bd6c;--red:#a53b31}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:none}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0b1018;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-canvas{display:block;width:100vw;height:100vh;background:#111823}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#0d1119;color:#f4ecdd;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#renderCanvas{width:100%;height:100%;display:block;outline:none}
 #hud{position:fixed;inset:0;pointer-events:none;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
-.panel{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(8px);border-radius:14px;box-shadow:0 8px 28px #0008}
-#top{position:absolute;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top));display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
-#objective,#status{padding:9px 12px;font-size:12px;line-height:1.35}.big{font-weight:800;letter-spacing:.05em;font-size:13px}
-#objective{max-width:58vw}#status{text-align:right;min-width:130px}.meter{height:6px;background:#ffffff18;border-radius:999px;overflow:hidden;margin-top:5px}.meter i{display:block;width:100%;height:100%;background:var(--gold)}
-#start{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(180deg,rgba(45,39,55,.78),rgba(8,12,18,.9));pointer-events:auto}
-.card{width:min(480px,94vw);padding:22px;text-align:center}.card h1{font-size:27px;margin:0 0 6px;letter-spacing:.07em}.card p{opacity:.82;font-size:14px;line-height:1.55;margin:10px 0 16px}.card .note{font-size:12px;opacity:.68}
-button{font:inherit;color:#fff;background:#17202d;border:1px solid var(--line);border-radius:12px;padding:13px 16px;font-weight:700}button.primary{background:#8e332b;border-color:#bc5045;min-width:180px}
-#toast{position:absolute;left:50%;bottom:38%;transform:translateX(-50%);padding:10px 14px;opacity:0;transition:.18s;white-space:nowrap;font-size:13px}.show{opacity:1!important}
-#touch{position:absolute;inset:0;pointer-events:none;display:none}
-#stickBase{position:absolute;left:22px;bottom:calc(24px + env(safe-area-inset-bottom));width:126px;height:126px;border-radius:50%;background:#ffffff12;border:1px solid #ffffff2b;pointer-events:auto}
-#stickKnob{position:absolute;left:38px;top:38px;width:50px;height:50px;border-radius:50%;background:#ffffff38;border:1px solid #ffffff55}
-.action{position:absolute;border-radius:50%;width:76px;height:76px;display:flex;align-items:center;justify-content:center;pointer-events:auto;user-select:none;-webkit-user-select:none;font-size:12px;text-align:center;padding:8px;background:#17202ddc;border:1px solid #ffffff35;color:#fff;font-weight:800}
-#interact{right:20px;bottom:calc(32px + env(safe-area-inset-bottom));background:#6f5730dd}#sprint{right:106px;bottom:calc(98px + env(safe-area-inset-bottom));background:#394354dd}
-#end{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#06090dd8;pointer-events:auto;padding:24px}#end h2{font-size:34px;margin:0 0 8px}.hidden{display:none!important}
-@media (pointer:fine){#touch{display:none!important}}
+.glass{background:rgba(8,12,18,.70);border:1px solid rgba(255,255,255,.17);backdrop-filter:blur(8px);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.42)}
+#top{position:absolute;top:calc(10px + env(safe-area-inset-top));left:10px;right:10px;display:flex;justify-content:space-between;gap:8px}
+#objective,#state{padding:10px 12px;font-size:12px;line-height:1.4}#objective{max-width:62vw}#state{text-align:right;min-width:130px}
+.title{font-weight:900;letter-spacing:.08em;font-size:13px}.meter{height:6px;background:#ffffff18;border-radius:999px;overflow:hidden;margin-top:4px}.meter>i{height:100%;display:block;width:100%;background:#e5b866}
+#modelStatus{margin-top:4px;font-size:10px;opacity:.58}
+#toast{position:absolute;left:50%;bottom:33%;transform:translateX(-50%);padding:10px 14px;opacity:0;transition:.18s;white-space:nowrap;font-size:13px}.show{opacity:1!important}
+#start,#end{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:22px;pointer-events:auto;background:linear-gradient(180deg,rgba(85,55,68,.62),rgba(7,10,15,.9))}
+#end{display:none}.card{width:min(520px,94vw);padding:22px;text-align:center}.card h1{font-size:28px;margin:0 0 5px;letter-spacing:.08em}.card h2{font-size:36px;margin:0 0 8px}.card p{font-size:14px;line-height:1.55;opacity:.84}.small{font-size:11px!important;opacity:.6!important}
+button{font:inherit;color:white;background:#152032;border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:13px 17px;font-weight:800}.primary{background:#8a3029;border-color:#c55347;min-width:190px}
+#touch{position:absolute;inset:0;display:none;pointer-events:none}.pad{pointer-events:auto;user-select:none;-webkit-user-select:none}
+#stick{position:absolute;left:20px;bottom:calc(25px + env(safe-area-inset-bottom));width:128px;height:128px;border-radius:50%;background:#ffffff10;border:1px solid #ffffff2b}
+#knob{position:absolute;left:39px;top:39px;width:50px;height:50px;border-radius:50%;background:#ffffff35;border:1px solid #ffffff55}
+.action{position:absolute;width:78px;height:78px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;font-weight:900;border:1px solid #ffffff35;background:#17202ddd}
+#interact{right:18px;bottom:calc(28px + env(safe-area-inset-bottom));background:#67522edd}#dash{right:104px;bottom:calc(102px + env(safe-area-inset-bottom));background:#394455dd}
+#lookzone{position:absolute;right:0;top:16%;width:46%;height:54%;pointer-events:auto}
+#cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;border:1px solid #fff7;opacity:.55}
+@media(pointer:fine){#touch{display:none!important}}
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+<canvas id="renderCanvas"></canvas>
 <div id="hud">
-  <div id="top" class="hidden">
-    <div id="objective" class="panel"><div class="big">ESCAPER</div><div id="goal">霊灯 0 / 3</div></div>
-    <div id="status" class="panel"><div id="health">NORMAL</div><div>STAMINA<div class="meter"><i id="stamina"></i></div></div></div>
+  <div id="top" style="display:none">
+    <div id="objective" class="glass"><div class="title">ESCAPER</div><div id="goal">霊灯 0 / 3</div><div id="modelStatus">3D map loading…</div></div>
+    <div id="state" class="glass"><div id="health">NORMAL</div><div>STAMINA<div class="meter"><i id="stamina"></i></div></div></div>
   </div>
-  <div id="toast" class="panel"></div>
+  <div id="toast" class="glass"></div>
+  <div id="cross"></div>
   <div id="touch">
-    <div id="stickBase"><div id="stickKnob"></div></div>
-    <div id="sprint" class="action">DASH</div>
-    <div id="interact" class="action">霊灯<br>E</div>
+    <div id="stick" class="pad"><div id="knob"></div></div>
+    <div id="lookzone" class="pad"></div>
+    <div id="dash" class="action pad">DASH</div>
+    <div id="interact" class="action pad">霊灯<br>HOLD</div>
   </div>
-  <div id="start">
-    <div class="card panel">
-      <h1>KUROYA: DUSK HUNT</h1>
-      <p>夕暮れの神社で追跡者から逃げながら、<b>霊灯を3つ</b>起動して第一鳥居から脱出してください。</p>
-      <button id="play" class="primary">▶ すぐ遊ぶ</button>
-      <p class="note">iPhone / iPad: 左スティックで移動、DASHで走る、霊灯の近くで「霊灯」を長押し。<br>PC: WASD / Shift / E。</p>
-    </div>
-  </div>
-  <div id="end"><div class="card panel"><h2 id="endTitle">ESCAPED</h2><p id="endText"></p><button id="again" class="primary">もう一度</button></div></div>
+  <div id="start"><div class="card glass">
+    <h1>KUROYA: DUSK HUNT</h1>
+    <p>夕暮れの神社を舞台にした非対称ホラー鬼ごっこ。<br><b>霊灯を3つ</b>起動し、第一鳥居から脱出してください。</p>
+    <button id="play" class="primary">▶ 3D版を遊ぶ</button>
+    <p class="small">iPhone/iPad: 左スティック移動・右側ドラッグ視点・DASH・霊灯長押し。<br>PC: WASD / マウス / Shift / E。</p>
+  </div></div>
+  <div id="end"><div class="card glass"><h2 id="endTitle"></h2><p id="endText"></p><button id="again" class="primary">もう一度</button></div></div>
 </div>
+<script src="https://cdn.babylonjs.com/babylon.js"></script>
+<script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
 <script>
 (()=>{
 'use strict';
-const $=s=>document.querySelector(s), C=$('#game'), ctx=C.getContext('2d');
-let W=0,H=0,DPR=1;
-function resize(){DPR=Math.min(window.devicePixelRatio||1,2);W=innerWidth;H=innerHeight;C.width=Math.floor(W*DPR);C.height=Math.floor(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0)}
-addEventListener('resize',resize,{passive:true}); resize();
-const ui={start:$('#start'),play:$('#play'),top:$('#top'),goal:$('#goal'),health:$('#health'),stamina:$('#stamina'),toast:$('#toast'),touch:$('#touch'),stickBase:$('#stickBase'),stickKnob:$('#stickKnob'),sprint:$('#sprint'),interact:$('#interact'),end:$('#end'),endTitle:$('#endTitle'),endText:$('#endText'),again:$('#again')};
-const buildings=[
-{x:1010,y:620,w:310,h:170,n:'HAIDEN'},{x:1040,y:370,w:250,h:150,n:'HONDEN'},
-{x:520,y:650,w:170,h:130,n:'HACHIMAN'},{x:1540,y:570,w:160,h:130,n:'INARI'},
-{x:730,y:1050,w:145,h:100,n:'TEMIZU'},{x:980,y:1350,w:250,h:36,n:'FIRST TORII'}];
-const walls=[...buildings.map(b=>({...b})),{x:250,y:250,w:40,h:1150},{x:1870,y:250,w:40,h:1150},{x:250,y:250,w:1660,h:40},{x:250,y:1400,w:660,h:40},{x:1290,y:1400,w:620,h:40}];
-const lanterns=[{x:620,y:850},{x:1480,y:830},{x:830,y:480},{x:1390,y:460},{x:1100,y:1120}].map((p,i)=>({...p,id:i,on:false,progress:0}));
-const trees=[];let seed=1337;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
-for(let i=0;i<120;i++){let x=310+rnd()*1540,y=310+rnd()*1040;if(buildings.some(b=>x>b.x-80&&x<b.x+b.w+80&&y>b.y-80&&y<b.y+b.h+80))continue;trees.push({x,y,r:14+rnd()*18})}
-let running=false,ended=false,lit=0;
-const me={x:1100,y:1250,r:15,speed:182,stamina:100,hp:2,a:-Math.PI/2};
-const hunter={x:1100,y:410,r:19,speed:142,attackCd:0};
-const keys={}; let joy={x:0,y:0,active:false}, touchSprint=false, touchInteract=false;
-addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault()});
-addEventListener('keyup',e=>{keys[e.code]=false});
-function toast(t){ui.toast.textContent=t;ui.toast.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>ui.toast.classList.remove('show'),1400)}
-function reset(){running=true;ended=false;lit=0;me.x=1100;me.y=1250;me.hp=2;me.stamina=100;hunter.x=1100;hunter.y=410;hunter.attackCd=0;lanterns.forEach(l=>{l.on=false;l.progress=0});ui.start.style.display='none';ui.end.style.display='none';ui.top.classList.remove('hidden');if(matchMedia('(pointer:coarse)').matches)ui.touch.style.display='block';toast('霊灯を3つ起動せよ')}
-ui.play.addEventListener('click',reset);ui.again.addEventListener('click',reset);
+const $=s=>document.querySelector(s), canvas=$('#renderCanvas');
+const ui={top:$('#top'),goal:$('#goal'),health:$('#health'),stamina:$('#stamina'),modelStatus:$('#modelStatus'),toast:$('#toast'),start:$('#start'),end:$('#end'),endTitle:$('#endTitle'),endText:$('#endText'),play:$('#play'),again:$('#again'),touch:$('#touch'),stick:$('#stick'),knob:$('#knob'),look:$('#lookzone'),dash:$('#dash'),interact:$('#interact')};
+let engine,scene,camera,player,playerVis,hunter,hunterVis,exitZone,exitGlow,lanterns=[],running=false,ended=false,lit=0,modelLoaded=false;
+let yaw=0,pitch=.20,lookDX=0,lookDY=0,joy={x:0,y:0,active:false},touchDash=false,touchInteract=false,interactProgress=0,activeLantern=null;
+const keys={};
+const M={wood:null,roof:null,stone:null,ground:null,path:null,torii:null,lanternOff:null,lanternOn:null,player:null,hunter:null};
+const MAP=80;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function toast(t){ui.toast.textContent=t;ui.toast.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>ui.toast.classList.remove('show'),1500)}
+function makeMat(name,diff,em=null){const m=new BABYLON.StandardMaterial(name,scene);m.diffuseColor=BABYLON.Color3.FromHexString(diff);m.specularColor=new BABYLON.Color3(.1,.1,.1);if(em)m.emissiveColor=BABYLON.Color3.FromHexString(em);return m}
+function setupMaterials(){M.wood=makeMat('wood','#322b29');M.roof=makeMat('roof','#171b20');M.stone=makeMat('stone','#55575a');M.ground=makeMat('ground','#252c29');M.path=makeMat('path','#49453f');M.torii=makeMat('torii','#70322c');M.lanternOff=makeMat('loff','#6d5b48');M.lanternOn=makeMat('lon','#c8903a','#ffbd57');M.player=makeMat('player','#d9d5c9');M.hunter=makeMat('hunter','#6e2525','#3a0808')}
+function addBox(name,pos,size,mat,collide=true){const m=BABYLON.MeshBuilder.CreateBox(name,{width:size.x,height:size.y,depth:size.z},scene);m.position.copyFrom(pos);m.material=mat;m.checkCollisions=collide;return m}
+function roof(name,pos,w,d,h=2){const r=BABYLON.MeshBuilder.CreateCylinder(name,{diameterTop:0,diameterBottom:1,height:1,tessellation:4},scene);r.scaling=new BABYLON.Vector3(w*1.35,h,d*1.35);r.position.copyFrom(pos);r.rotation.y=Math.PI/4;r.material=M.roof;r.checkCollisions=true;return r}
+function shrine(name,x,z,w,d,h=5){addBox(name,new BABYLON.Vector3(x,h/2,z),new BABYLON.Vector3(w,h,d),M.wood,true);roof(name+'_roof',new BABYLON.Vector3(x,h+1.15,z),w,d,2.4)}
+function torii(x,z){const root=new BABYLON.TransformNode('First Torii',scene);for(const sx of [-2.5,2.5]){const p=addBox('torii_p',new BABYLON.Vector3(x+sx,3,z),new BABYLON.Vector3(.55,6,.55),M.torii,false);p.parent=root}let b=addBox('torii_b',new BABYLON.Vector3(x,5.4,z),new BABYLON.Vector3(7,.55,.7),M.torii,false);b.parent=root;b=addBox('torii_b2',new BABYLON.Vector3(x,6.25,z),new BABYLON.Vector3(8.3,.42,.8),M.torii,false);b.parent=root;return root}
+function addTree(x,z,s=1){const trunk=BABYLON.MeshBuilder.CreateCylinder('tree',{height:3.6*s,diameter:.55*s,tessellation:8},scene);trunk.position.set(x,1.8*s,z);trunk.material=M.wood;trunk.checkCollisions=true;const crown=BABYLON.MeshBuilder.CreateSphere('crown',{diameter:3.2*s,segments:8},scene);crown.scaling.y=1.25;crown.position.set(x,4.2*s,z);const cm=new BABYLON.StandardMaterial('leaf'+Math.random(),scene);cm.diffuseColor=new BABYLON.Color3(.07+.04*Math.random(),.14+.05*Math.random(),.11+.03*Math.random());cm.specularColor=BABYLON.Color3.Black();crown.material=cm;return [trunk,crown]}
+function buildFallback(){const g=BABYLON.MeshBuilder.CreateGround('Terrain_160m',{width:MAP,height:MAP,subdivisions:2},scene);g.material=M.ground;g.checkCollisions=true;const p1=addBox('main_path',new BABYLON.Vector3(0,.03,7),new BABYLON.Vector3(7,.08,62),M.path,false);const p2=addBox('cross_path',new BABYLON.Vector3(0,.04,-7),new BABYLON.Vector3(42,.08,5),M.path,false);
+shrine('Haiden',0,-7,14,8,5.2);shrine('Honden',0,-19,10,7,5);shrine('Hachiman',-18,-5,7,6,4.2);shrine('Inari',19,-10,6,5,4);shrine('Temizu',-10,12,5,4,3.2);torii(0,28);
+const rng=(()=>{let s=20260908;return()=>((s=(s*1664525+1013904223)>>>0)/4294967296)})();for(let i=0;i<75;i++){let x=-36+rng()*72,z=-35+rng()*68;if(Math.abs(x)<8&&z>-28)continue;if(Math.hypot(x,z)<12)continue;addTree(x,z,.8+rng()*.75)}
+for(const x of [-30,30])for(let z=-30;z<=28;z+=5)addBox('stone_wall',new BABYLON.Vector3(x,.8,z),new BABYLON.Vector3(.5,1.6,4.5),M.stone,true)
+ui.modelStatus.textContent='3D生成マップ（GLBを置くと実モデルへ自動切替）';
+}
+async function tryLoadRealMap(){try{const result=await BABYLON.SceneLoader.ImportMeshAsync('', './','Kuroya_GameMap.glb',scene);if(!result.meshes.length)return null;let min=new BABYLON.Vector3(Number.POSITIVE_INFINITY,Number.POSITIVE_INFINITY,Number.POSITIVE_INFINITY),max=new BABYLON.Vector3(Number.NEGATIVE_INFINITY,Number.NEGATIVE_INFINITY,Number.NEGATIVE_INFINITY);for(const m of result.meshes){if(!m.getBoundingInfo)continue;m.computeWorldMatrix(true);const bb=m.getBoundingInfo().boundingBox;min=BABYLON.Vector3.Minimize(min,bb.minimumWorld);max=BABYLON.Vector3.Maximize(max,bb.maximumWorld)}const dim=max.subtract(min),biggest=Math.max(dim.x,dim.z,dim.y);const scale=biggest>1?74/biggest:1,center=min.add(max).scale(.5);const root=result.meshes.find(m=>m.name==='__root__')||result.meshes[0];root.scaling=new BABYLON.Vector3(scale,scale,scale);root.position=center.scale(-scale);for(const m of result.meshes){m.checkCollisions=true}let cfg=null;try{const r=await fetch('./kuroya_game_config.json',{cache:'no-store'});if(r.ok)cfg=await r.json()}catch(_){}const tx=p=>{const v=new BABYLON.Vector3(p[0],p[1],p[2]);return v.subtract(center).scale(scale)};let objectivePositions=null,exitPosition=null;if(cfg&&Array.isArray(cfg.objectives)){objectivePositions=cfg.objectives.slice(0,5).map(o=>tx(o.position));if(cfg.exit?.position)exitPosition=tx(cfg.exit.position)}modelLoaded=true;ui.modelStatus.textContent='Kuroya実モデル読み込み済み';toast('Kuroya実モデルを読み込みました');return {objectivePositions,exitPosition}}catch(e){return null}}
+function makeLantern(x,z,i){const pole=BABYLON.MeshBuilder.CreateCylinder('lantern_'+i,{height:1.2,diameter:.18,tessellation:8},scene);pole.position.set(x,.6,z);pole.material=M.stone;const orb=BABYLON.MeshBuilder.CreateSphere('lantern_orb_'+i,{diameter:.42,segments:12},scene);orb.position.set(x,1.28,z);orb.material=M.lanternOff;const light=new BABYLON.PointLight('lantern_light_'+i,new BABYLON.Vector3(x,1.4,z),scene);light.diffuse=new BABYLON.Color3(1,.65,.22);light.intensity=0;light.range=8;lanterns.push({x,z,on:false,orb,light});}
+function buildObjectives(real){const defaults=[new BABYLON.Vector3(-17,0,4),new BABYLON.Vector3(17,0,4),new BABYLON.Vector3(-10,0,-17),new BABYLON.Vector3(12,0,-19),new BABYLON.Vector3(0,0,13)];const ps=real?.objectivePositions?.length>=3?real.objectivePositions:defaults;ps.slice(0,5).forEach((p,i)=>makeLantern(p.x,p.z,i));const ep=real?.exitPosition||new BABYLON.Vector3(0,0,28);exitZone=BABYLON.MeshBuilder.CreateBox('exitZone',{width:8,height:3,depth:2},scene);exitZone.position.set(ep.x,1.5,ep.z);exitZone.isVisible=false;exitZone.metadata={x:ep.x,z:ep.z};exitGlow=BABYLON.MeshBuilder.CreateTorus('exitGlow',{diameter:6,thickness:.12,tessellation:32},scene);exitGlow.position.set(ep.x,.12,ep.z);exitGlow.rotation.x=Math.PI/2;exitGlow.material=M.lanternOn;exitGlow.isVisible=false}
+function makeActor(name,pos,mat,scale=1){const root=BABYLON.MeshBuilder.CreateCapsule(name,{height:2.1*scale,radius:.42*scale,tessellation:12},scene);root.position.copyFrom(pos);root.material=mat;root.ellipsoid=new BABYLON.Vector3(.45*scale,1.0*scale,.45*scale);root.ellipsoidOffset=new BABYLON.Vector3(0,.95*scale,0);root.checkCollisions=true;return root}
+function setupActors(){player=makeActor('playerCollider',new BABYLON.Vector3(0,1.1,23),M.player,1);hunter=makeActor('hunterCollider',new BABYLON.Vector3(0,1.15,-24),M.hunter,1.08);player.hp=2;player.stamina=100;hunter.cool=0}
+async function setupWorld(){engine=new BABYLON.Engine(canvas,true,{preserveDrawingBuffer:false,stencil:true,adaptToDeviceRatio:true});scene=new BABYLON.Scene(engine);scene.collisionsEnabled=true;scene.clearColor=new BABYLON.Color4(.11,.12,.18,1);scene.fogMode=BABYLON.Scene.FOGMODE_EXP2;scene.fogDensity=.016;scene.fogColor=new BABYLON.Color3(.20,.22,.28);setupMaterials();
+const hemi=new BABYLON.HemisphericLight('hemi',new BABYLON.Vector3(0,1,0),scene);hemi.intensity=.52;hemi.diffuse=new BABYLON.Color3(.50,.57,.72);hemi.groundColor=new BABYLON.Color3(.12,.10,.10);const sun=new BABYLON.DirectionalLight('sun',new BABYLON.Vector3(-.35,-1,.25),scene);sun.position=new BABYLON.Vector3(25,35,-35);sun.intensity=.68;sun.diffuse=new BABYLON.Color3(1,.48,.28);
+const sky=BABYLON.MeshBuilder.CreateSphere('sky',{diameter:180,segments:16},scene);sky.isPickable=false;const sm=new BABYLON.StandardMaterial('skyMat',scene);sm.backFaceCulling=false;sm.disableLighting=true;sm.emissiveColor=new BABYLON.Color3(.19,.14,.22);sky.material=sm;
+const real=await tryLoadRealMap();if(!real)buildFallback();buildObjectives(real);setupActors();camera=new BABYLON.FreeCamera('camera',new BABYLON.Vector3(0,4.4,29),scene);camera.minZ=.08;camera.fov=1.0;
+for(let i=0;i<45;i++){const f=BABYLON.MeshBuilder.CreateSphere('firefly',{diameter:.05,segments:4},scene);f.position.set((Math.random()-.5)*60,.8+Math.random()*5,(Math.random()-.5)*60);const fm=makeMat('fm'+i,'#2b2b20','#c9b34f');f.material=fm;f.metadata={base:f.position.clone(),phase:Math.random()*8}}
+engine.runRenderLoop(loop);addEventListener('resize',()=>engine.resize());}
+function resetGame(){lit=0;ended=false;running=true;player.position.set(0,1.1,23);player.hp=2;player.stamina=100;hunter.position.set(0,1.15,-24);hunter.cool=0;lanterns.forEach(l=>{l.on=false;l.orb.material=M.lanternOff;l.light.intensity=0});exitGlow.isVisible=false;interactProgress=0;activeLantern=null;ui.start.style.display='none';ui.end.style.display='none';ui.top.style.display='flex';if(matchMedia('(pointer:coarse)').matches)ui.touch.style.display='block';toast('霊灯を3つ起動せよ')}
 function end(win,msg){if(ended)return;ended=true;running=false;ui.touch.style.display='none';ui.end.style.display='flex';ui.endTitle.textContent=win?'ESCAPED':'CAUGHT';ui.endText.textContent=msg}
-function collides(x,y,r=15){for(const b of walls){if(x+r>b.x&&x-r<b.x+b.w&&y+r>b.y&&y-r<b.y+b.h)return true}return x<275||y<275||x>1885||y>1425}
-function move(dt){let dx=joy.active?joy.x:((keys.KeyD?1:0)-(keys.KeyA?1:0)),dy=joy.active?joy.y:((keys.KeyS?1:0)-(keys.KeyW?1:0));let mag=Math.hypot(dx,dy);if(mag>.03){if(mag>1){dx/=mag;dy/=mag}let sprint=(keys.ShiftLeft||keys.ShiftRight||touchSprint)&&me.stamina>1;let sp=me.speed*(sprint?1.55:1);if(sprint)me.stamina=Math.max(0,me.stamina-34*dt);else me.stamina=Math.min(100,me.stamina+18*dt);let nx=me.x+dx*sp*dt,ny=me.y+dy*sp*dt;if(!collides(nx,me.y,me.r))me.x=nx;if(!collides(me.x,ny,me.r))me.y=ny;me.a=Math.atan2(dy,dx)}else me.stamina=Math.min(100,me.stamina+22*dt)}
-function interact(dt){let near=null,nd=Infinity;for(const l of lanterns){if(l.on)continue;let d=Math.hypot(me.x-l.x,me.y-l.y);if(d<62&&d<nd){near=l;nd=d}}let pressed=keys.KeyE||touchInteract;if(near&&pressed){near.progress+=dt;ui.goal.textContent=`霊灯 ${lit} / 3 · 起動中 ${Math.min(100,Math.floor(near.progress/1.7*100))}%`;if(near.progress>=1.7){near.on=true;lit++;near.progress=1.7;toast('霊灯を起動');ui.goal.textContent=`霊灯 ${lit} / 3${lit>=3?' · 第一鳥居へ':''}`}}else ui.goal.textContent=`霊灯 ${lit} / 3${lit>=3?' · 第一鳥居へ':''}`;if(lit>=3&&me.y>1350&&me.x>920&&me.x<1280)end(true,'第一鳥居から脱出した')}
-function ai(dt){hunter.attackCd=Math.max(0,hunter.attackCd-dt);let dx=me.x-hunter.x,dy=me.y-hunter.y,d=Math.hypot(dx,dy);if(d>1){let nx=hunter.x+dx/d*hunter.speed*dt,ny=hunter.y+dy/d*hunter.speed*dt;if(!collides(nx,hunter.y,hunter.r))hunter.x=nx;if(!collides(hunter.x,ny,hunter.r))hunter.y=ny}if(d<36&&hunter.attackCd<=0){hunter.attackCd=1.25;me.hp--;toast(me.hp>0?'負傷した — 次の一撃で捕縛':'捕縛された');if(me.hp<=0)end(false,'追跡者に捕縛された')}}
-function bindHold(el,setter){const on=e=>{e.preventDefault();setter(true)};const off=e=>{e.preventDefault();setter(false)};el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);el.addEventListener('pointerleave',off)}
-bindHold(ui.sprint,v=>touchSprint=v);bindHold(ui.interact,v=>touchInteract=v);
-let stickId=null;
-function stickMove(e){const r=ui.stickBase.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy;const max=r.width*.34, m=Math.hypot(dx,dy)||1;if(m>max){dx=dx/m*max;dy=dy/m*max}joy.x=dx/max;joy.y=dy/max;joy.active=true;ui.stickKnob.style.transform=`translate(${dx}px,${dy}px)`}
-ui.stickBase.addEventListener('pointerdown',e=>{stickId=e.pointerId;ui.stickBase.setPointerCapture(e.pointerId);stickMove(e)});ui.stickBase.addEventListener('pointermove',e=>{if(e.pointerId===stickId)stickMove(e)});function stickEnd(e){if(stickId!==null&&e.pointerId!==undefined&&e.pointerId!==stickId)return;stickId=null;joy={x:0,y:0,active:false};ui.stickKnob.style.transform='translate(0,0)'}ui.stickBase.addEventListener('pointerup',stickEnd);ui.stickBase.addEventListener('pointercancel',stickEnd);
-let last=performance.now();function tick(t){const dt=Math.min(.033,(t-last)/1000);last=t;if(running){move(dt);interact(dt);ai(dt);ui.health.textContent=me.hp===2?'NORMAL':'INJURED';ui.stamina.style.width=me.stamina+'%'}draw();requestAnimationFrame(tick)}requestAnimationFrame(tick);
-function drawActor(p,col,hunt=false){ctx.save();ctx.translate(p.x,p.y);ctx.fillStyle='#0006';ctx.beginPath();ctx.ellipse(10,12,22,11,.2,0,Math.PI*2);ctx.fill();ctx.fillStyle=col;ctx.beginPath();ctx.arc(0,0,hunt?20:16,0,Math.PI*2);ctx.fill();ctx.strokeStyle=hunt?'#e45a50':'#fff9';ctx.lineWidth=3;ctx.stroke();ctx.rotate(p.a||0);ctx.fillStyle=hunt?'#e45a50':'#fff';ctx.beginPath();ctx.moveTo(24,0);ctx.lineTo(8,-6);ctx.lineTo(8,6);ctx.fill();ctx.restore()}
-function draw(){let camx=running?me.x:1100,camy=running?me.y:900;let scale=Math.max(.45,Math.min(.78,Math.min(W/1100,H/800)));let g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#644352');g.addColorStop(.46,'#2d3546');g.addColorStop(1,'#121821');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.save();ctx.translate(W/2-camx*scale,H/2-camy*scale);ctx.scale(scale,scale);ctx.fillStyle='#282e2d';ctx.fillRect(250,250,1660,1190);ctx.fillStyle='#4a4741';ctx.fillRect(1040,300,120,1110);ctx.fillRect(530,815,1110,70);ctx.globalAlpha=.17;ctx.fillStyle='#000';for(const tr of trees){ctx.beginPath();ctx.ellipse(tr.x+38,tr.y+18,tr.r*2.1,tr.r*.65,.2,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;for(const tr of trees){ctx.fillStyle='#17231e';ctx.beginPath();ctx.arc(tr.x,tr.y,tr.r,0,Math.PI*2);ctx.fill();ctx.fillStyle='#263329';ctx.beginPath();ctx.arc(tr.x-5,tr.y-5,tr.r*.62,0,Math.PI*2);ctx.fill()}for(const b of buildings){ctx.fillStyle=b.n==='FIRST TORII'?'#743229':'#352d2b';ctx.fillRect(b.x,b.y,b.w,b.h);ctx.strokeStyle='#796e5e';ctx.lineWidth=4;ctx.strokeRect(b.x+4,b.y+4,b.w-8,b.h-8);if(b.n!=='FIRST TORII'){ctx.fillStyle='#171a1d';ctx.fillRect(b.x+20,b.y+b.h*.38,b.w-40,b.h*.38)}ctx.fillStyle='#d4c3a0';ctx.font='bold 20px sans-serif';ctx.textAlign='center';ctx.fillText(b.n,b.x+b.w/2,b.y-10)}for(const l of lanterns){if(l.on){const rg=ctx.createRadialGradient(l.x,l.y,2,l.x,l.y,72);rg.addColorStop(0,'rgba(255,205,103,.7)');rg.addColorStop(1,'rgba(255,170,50,0)');ctx.fillStyle=rg;ctx.beginPath();ctx.arc(l.x,l.y,72,0,Math.PI*2);ctx.fill()}ctx.fillStyle=l.on?'#ffd27c':'#6f5b48';ctx.beginPath();ctx.arc(l.x,l.y,l.on?25:11,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#2a2018';ctx.lineWidth=5;ctx.stroke()}if(lit>=3){ctx.strokeStyle='#f0bc63';ctx.lineWidth=8;ctx.strokeRect(960,1340,290,58)}drawActor(hunter,'#8d2d28',true);drawActor(me,'#f0e3c4',false);ctx.restore();const haze=ctx.createLinearGradient(0,0,W,H);haze.addColorStop(0,'rgba(225,115,78,.06)');haze.addColorStop(1,'rgba(50,70,110,.14)');ctx.fillStyle=haze;ctx.fillRect(0,0,W,H)}
+ui.play.onclick=resetGame;ui.again.onclick=resetGame;
+addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault()});addEventListener('keyup',e=>keys[e.code]=false);
+canvas.addEventListener('click',()=>{if(!matchMedia('(pointer:coarse)').matches&&document.pointerLockElement!==canvas)canvas.requestPointerLock?.()});addEventListener('mousemove',e=>{if(document.pointerLockElement===canvas){yaw-=e.movementX*.0025;pitch=clamp(pitch-e.movementY*.0018,-.05,.75)}});
+function bindHold(el,set){for(const ev of ['pointerdown'])el.addEventListener(ev,e=>{e.preventDefault();set(true)});for(const ev of ['pointerup','pointercancel','pointerleave'])el.addEventListener(ev,e=>{e.preventDefault();set(false)})}bindHold(ui.dash,v=>touchDash=v);bindHold(ui.interact,v=>touchInteract=v);
+let sid=null;function stickMove(e){const r=ui.stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy,max=r.width*.34,m=Math.hypot(dx,dy)||1;if(m>max){dx=dx/m*max;dy=dy/m*max}joy={x:dx/max,y:dy/max,active:true};ui.knob.style.transform=`translate(${dx}px,${dy}px)`}ui.stick.addEventListener('pointerdown',e=>{sid=e.pointerId;ui.stick.setPointerCapture(e.pointerId);stickMove(e)});ui.stick.addEventListener('pointermove',e=>{if(e.pointerId===sid)stickMove(e)});function stickEnd(e){if(sid!==null&&e.pointerId!==sid)return;sid=null;joy={x:0,y:0,active:false};ui.knob.style.transform='translate(0,0)'}ui.stick.addEventListener('pointerup',stickEnd);ui.stick.addEventListener('pointercancel',stickEnd);
+let lid=null,lx=0,ly=0;ui.look.addEventListener('pointerdown',e=>{lid=e.pointerId;lx=e.clientX;ly=e.clientY;ui.look.setPointerCapture(e.pointerId)});ui.look.addEventListener('pointermove',e=>{if(e.pointerId!==lid)return;let dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;yaw-=dx*.006;pitch=clamp(pitch-dy*.004,-.05,.75)});for(const ev of ['pointerup','pointercancel'])ui.look.addEventListener(ev,e=>{if(e.pointerId===lid)lid=null});
+function movePlayer(dt){let x=joy.active?joy.x:((keys.KeyD?1:0)-(keys.KeyA?1:0)),y=joy.active?-joy.y:((keys.KeyW?1:0)-(keys.KeyS?1:0));let mag=Math.hypot(x,y);if(mag>.04){if(mag>1){x/=mag;y/=mag}const fwd=new BABYLON.Vector3(Math.sin(yaw),0,Math.cos(yaw)),right=new BABYLON.Vector3(Math.cos(yaw),0,-Math.sin(yaw));let dir=fwd.scale(y).add(right.scale(x));if(dir.lengthSquared()>0)dir.normalize();const dash=(keys.ShiftLeft||keys.ShiftRight||touchDash)&&player.stamina>1;let sp=dash?6.1:3.9;if(dash)player.stamina=Math.max(0,player.stamina-32*dt);else player.stamina=Math.min(100,player.stamina+18*dt);player.moveWithCollisions(dir.scale(sp*dt));player.rotation.y=Math.atan2(dir.x,dir.z)}else player.stamina=Math.min(100,player.stamina+23*dt);player.position.y=1.1}
+function updateInteract(dt){let nearest=null,nd=999;for(const l of lanterns){if(l.on)continue;const d=Math.hypot(player.position.x-l.x,player.position.z-l.z);if(d<2.6&&d<nd){nd=d;nearest=l}}const held=keys.KeyE||touchInteract;if(nearest&&held){if(activeLantern!==nearest){activeLantern=nearest;interactProgress=0}interactProgress+=dt;ui.goal.textContent=`霊灯 ${lit} / 3 · 起動 ${Math.min(100,Math.floor(interactProgress/1.8*100))}%`;if(interactProgress>=1.8){nearest.on=true;nearest.orb.material=M.lanternOn;nearest.light.intensity=1.7;lit++;activeLantern=null;interactProgress=0;toast('霊灯を起動');if(lit>=3){exitGlow.isVisible=true;toast('第一鳥居が開いた')}}}else{activeLantern=null;interactProgress=0;ui.goal.textContent=`霊灯 ${lit} / 3${lit>=3?' · 第一鳥居へ':''}`}
+if(lit>=3&&exitZone?.metadata){const ex=exitZone.metadata.x,ez=exitZone.metadata.z;if(Math.hypot(player.position.x-ex,player.position.z-ez)<4.3)end(true,'第一鳥居から脱出した')}}
+function updateHunter(dt){hunter.cool=Math.max(0,hunter.cool-dt);let v=player.position.subtract(hunter.position);v.y=0;let d=v.length();if(d>0.1){v.normalize();const before=hunter.position.clone();hunter.moveWithCollisions(v.scale(3.0*dt));hunter.position.y=1.15;if(BABYLON.Vector3.DistanceSquared(before,hunter.position)<.0002){const side=new BABYLON.Vector3(v.z,0,-v.x);hunter.moveWithCollisions(side.scale(2.3*dt))}hunter.rotation.y=Math.atan2(v.x,v.z)}if(d<1.15&&hunter.cool<=0){hunter.cool=1.35;player.hp--;toast(player.hp>0?'負傷した — 次の一撃で捕縛':'捕縛された');if(player.hp<=0)end(false,'追跡者に捕縛された')}}
+function updateCamera(dt){const back=new BABYLON.Vector3(Math.sin(yaw),0,Math.cos(yaw)).scale(-6.3);const desired=player.position.add(back).add(new BABYLON.Vector3(0,3.25+pitch*2.5,0));camera.position=BABYLON.Vector3.Lerp(camera.position,desired,1-Math.pow(.001,dt));const target=player.position.add(new BABYLON.Vector3(0,1.0+pitch*1.2,0));camera.setTarget(target)}
+let last=performance.now();function loop(){const now=performance.now(),dt=Math.min(.033,(now-last)/1000);last=now;if(running){movePlayer(dt);updateInteract(dt);updateHunter(dt);updateCamera(dt);ui.health.textContent=player.hp===2?'NORMAL':'INJURED';ui.stamina.style.width=player.stamina+'%'}const t=now*.001;for(const m of scene.meshes){if(m.metadata?.base){m.position.y=m.metadata.base.y+Math.sin(t*1.7+m.metadata.phase)*.25;m.position.x=m.metadata.base.x+Math.sin(t*.7+m.metadata.phase)*.35}}scene.render()}
+setupWorld();
 })();
 </script>
-</body>
-</html>
+</body></html>
